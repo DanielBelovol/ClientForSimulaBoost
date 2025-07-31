@@ -5,7 +5,9 @@ import com.example.client.model.RequestFromVm;
 import com.example.client.model.RequestToVm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class CommandHandler {
     @Autowired
     private Mapper myMapper;
