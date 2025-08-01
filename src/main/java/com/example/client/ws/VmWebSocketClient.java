@@ -1,64 +1,83 @@
 package com.example.client.ws;
 
 import com.example.client.service.CommandHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.client.mapper.Mapper;
 import jakarta.annotation.PostConstruct;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.websocket.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @Component
+@ClientEndpoint
+public class VmWebSocketClient {
 
-public class VmWebSocketClient extends WebSocketClient {
+    private Session session;
 
-    private static String vmId;
-    @Autowired
-    private CommandHandler commandHandler;
+    private final CommandHandler commandHandler;
+    private final ObjectMapper objectMapper;
+    private final Mapper myMapper;
 
-    public VmWebSocketClient(@Value("${ws.server-uri}") String serverUri, CommandHandler commandHandler) throws Exception {
-        super(new URI(serverUri));
-        VmWebSocketClient.vmId = getVmId();
+    @Value("${websocket.server.uri}")
+    private String serverUri;
+
+    @Value("${vm.id}")
+    private String vmId;
+
+    public VmWebSocketClient(CommandHandler commandHandler, ObjectMapper objectMapper, Mapper myMapper) {
         this.commandHandler = commandHandler;
+        this.objectMapper = objectMapper;
+        this.myMapper = myMapper;
     }
 
     @PostConstruct
-    public void init() {
-        this.connect(); // подключение при запуске Spring Boot
-    }
-
-    @Override
-    public void onOpen(ServerHandshake handshakedata) {
-        System.out.println("✅ Connected to server");
-        send(vmId); // отправляем свой VM ID на сервер
-    }
-
-    @Override
-    public void onMessage(String message) {
-        System.out.println("📩 Received: " + message.toString());
-        commandHandler.handle(message);
-    }
-
-    @Override
-    public void onClose(int code, String reason, boolean remote) {
-        System.out.println("❌ Connection closed: " + reason);
-    }
-
-    @Override
-    public void onError(Exception ex) {
-        System.out.println("⚠️ Error:");
-        ex.printStackTrace();
-    }
-
-    private static String getVmId() {
+    public void connect() {
         try {
-            return Files.readString(Path.of("/sys/class/dmi/id/product_uuid")).trim();
+            String fullUri = serverUri + "?vmId=" + vmId;
+            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+            container.connectToServer(this, new URI(fullUri));
+            System.out.println("Подключение к WebSocket серверу: " + fullUri);
         } catch (Exception e) {
-            return "unknown-vm";
+            System.err.println("Ошибка подключения: " + e.getMessage());
+        }
+    }
+
+    @OnOpen
+    public void onOpen(Session session) {
+        this.session = session;
+        System.out.println("✅ WebSocket соединение установлено");
+        // Например, можно отправить сообщение после подключения:
+        sendMessage("Привет сервер!");
+    }
+
+    @OnMessage
+    public void onMessage(String message) {
+        System.out.println("📩 Получено сообщение: " + message);
+        try {
+            commandHandler.handle(message);
+        } catch (Exception e) {
+            System.err.println("Ошибка обработки сообщения: " + e.getMessage());
+        }
+    }
+
+    @OnClose
+    public void onClose(Session session, CloseReason closeReason) {
+        System.out.println("🔌 Соединение закрыто: " + closeReason);
+    }
+
+    @OnError
+    public void onError(Session session, Throwable throwable) {
+        System.err.println("❌ Ошибка WebSocket: " + throwable.getMessage());
+    }
+
+    public void sendMessage(String message) {
+        if (session != null && session.isOpen()) {
+            session.getAsyncRemote().sendText(message);
+        } else {
+            System.err.println("❌ Соединение не открыто");
         }
     }
 }
