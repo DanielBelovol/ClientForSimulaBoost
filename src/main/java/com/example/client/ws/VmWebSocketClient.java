@@ -1,25 +1,38 @@
 package com.example.client.ws;
 
+import com.example.client.model.ProxyModel;
+import com.example.client.model.RequestToVm;
 import com.example.client.service.CommandHandler;
+import com.example.client.service.SenderMessagesToServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.client.mapper.Mapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.websocket.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 import java.net.URI;
 
 @Component
 @ClientEndpoint
+@AllArgsConstructor
+@NoArgsConstructor
 public class VmWebSocketClient {
 
     private Session session;
-
-    private final CommandHandler commandHandler;
-    private final ObjectMapper objectMapper;
-    private final Mapper myMapper;
+    @Autowired
+    private CommandHandler commandHandler;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private Mapper myMapper;
+    @Autowired
+    private SenderMessagesToServer sender;
 
     @Value("${websocket.server.uri}")
     private String serverUri;
@@ -27,11 +40,6 @@ public class VmWebSocketClient {
     @Value("${vm.id}")
     private String vmId;
 
-    public VmWebSocketClient(CommandHandler commandHandler, ObjectMapper objectMapper, Mapper myMapper) {
-        this.commandHandler = commandHandler;
-        this.objectMapper = objectMapper;
-        this.myMapper = myMapper;
-    }
 
     @PostConstruct
     public void connect() {
@@ -50,14 +58,14 @@ public class VmWebSocketClient {
         this.session = session;
         System.out.println("✅ WebSocket соединение установлено");
         // Например, можно отправить сообщение после подключения:
-        sendMessage("Привет сервер!");
+        sender.sendMessageToServer("Привет сервер!",session);
     }
 
     @OnMessage
-    public void onMessage(String message) {
-        System.out.println("📩 Получено сообщение: " + message);
+    public void onMessage(@RequestBody RequestToVm requestToVm, Session session) {
+        System.out.println("📩 Получено сообщение: " + requestToVm.toString());
         try {
-            commandHandler.handle(message);
+            commandHandler.handle(requestToVm, session);
         } catch (Exception e) {
             System.err.println("Ошибка обработки сообщения: " + e.getMessage());
         }
@@ -71,13 +79,5 @@ public class VmWebSocketClient {
     @OnError
     public void onError(Session session, Throwable throwable) {
         System.err.println("❌ Ошибка WebSocket: " + throwable.getMessage());
-    }
-
-    public void sendMessage(String message) {
-        if (session != null && session.isOpen()) {
-            session.getAsyncRemote().sendText(message);
-        } else {
-            System.err.println("❌ Соединение не открыто");
-        }
     }
 }

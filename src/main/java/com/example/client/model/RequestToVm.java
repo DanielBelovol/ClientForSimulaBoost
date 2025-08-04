@@ -10,7 +10,10 @@ public class RequestToVm {
     @JsonProperty
     private TypeOfCommand typeOfCommand;
     @JsonProperty
+    private ProxyModel proxyModel;
+    @JsonProperty
     private String url;
     @JsonProperty
     private int quantity;
+
 }
