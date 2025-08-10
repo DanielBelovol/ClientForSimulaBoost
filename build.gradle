@@ -30,6 +30,8 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.glassfish.tyrus.bundles/tyrus-standalone-client
 	implementation("org.glassfish.tyrus.bundles:tyrus-standalone-client:2.2.0")
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'org.seleniumhq.selenium:selenium-java:4.20.0'
+	implementation 'org.seleniumhq.selenium:selenium-firefox-driver:4.20.0'
 }
 
 tasks.named('test') {
