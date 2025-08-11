@@ -116,7 +116,7 @@ public class CommandHandler {
 
             // Настройки Firefox
             FirefoxOptions options = new FirefoxOptions();
-            options.setBinary("/usr/bin/firefox");
+            options.setBinary("/snap/firefox/4848/usr/lib/firefox/firefox");
             options.setProxy(proxy);
             options.setProfile(profile);
 
