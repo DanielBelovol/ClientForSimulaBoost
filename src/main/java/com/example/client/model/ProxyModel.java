@@ -12,4 +12,5 @@ public class ProxyModel {
     private int port;
     private String username;
     private String password;
+    private String timezone;
 }

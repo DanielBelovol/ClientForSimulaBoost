@@ -16,7 +16,7 @@ public class ClientApplication {
 //		VmWebSocketClient client = context.getBean(VmWebSocketClient.class);
 //		client.connect();
 		CommandHandler commandHandler = new CommandHandler();
-		ProxyModel proxyModel = new ProxyModel("23.95.150.145",6114, "hqyzhmvb","aeuqkkl7vbxc");
+		ProxyModel proxyModel = new ProxyModel("23.95.150.145",6114, "hqyzhmvb","aeuqkkl7vbxc","Europe/Kiev");
 		RequestToVm request = new RequestToVm(null,null,proxyModel, null, 1);
 		commandHandler.startBrowserAndSearch(request);
 	}
